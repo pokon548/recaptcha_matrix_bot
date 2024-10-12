@@ -23,6 +23,9 @@
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.3.2",
     "@nestjs/platform-express": "^10.3.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "@upstash/redis": "^1.34.3",
+    "jshashes": "^1.0.8",
     "matrix-bot-sdk": "^0.7.1",
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1"
