@@ -49,7 +49,7 @@ async function bootstrap() {
             console.log('解析返回结果');
             const result = await response.json();
             console.log(result);
-            if (result.response !== null && Boolean(result.response)) {
+            if (result.response !== null && String(result.response) == 'true') {
               console.log('确认为 spam。提示并删除信息');
               await client.redactEvent(
                 roomId,
