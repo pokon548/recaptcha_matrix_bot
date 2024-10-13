@@ -14,6 +14,7 @@ async function bootstrap() {
   const homeserverUrl = process.env.HOME_SERVER_URL;
   const accessToken = process.env.TOKEN;
   const antiPUMEndpoint = process.env.ANTI_PUM_ENDPOINT_URL;
+  const longMessageDeleteCount = Number(process.env.LONG_MESSAGE_DELETE_COUNT);
 
   const redis = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL,
@@ -49,6 +50,16 @@ async function bootstrap() {
     const body = event['content']['body'];
     if (body) {
       const message = String(body);
+      // Too-long message limit
+      if (message.length > longMessageDeleteCount) {
+        await client.redactEvent(
+          roomId,
+          event['event_id'],
+          '请不要发送超长消息',
+        );
+        return;
+      }
+
       // 频率限制
       const sender = String(event['sender']);
       if (await redis.hexists('sender_' + sender, 'latest_message_hash')) {
@@ -98,7 +109,6 @@ async function bootstrap() {
 
       // AI 检测垃圾信息
       if (message.length > 50) {
-        console.log('检测到潜在的垃圾消息，正在调用 API 检测');
         const response = await fetch(antiPUMEndpoint, {
           method: 'POST',
           body: JSON.stringify({
@@ -109,15 +119,11 @@ async function bootstrap() {
           },
         });
 
-        console.log('调用完成');
-
         if (response.json !== null) {
           try {
-            console.log('解析返回结果');
             const result = await response.json();
             console.log(result);
             if (result.response !== null && String(result.response) == 'true') {
-              console.log('确认为 spam。提示并删除信息');
               await client.redactEvent(
                 roomId,
                 event['event_id'],
