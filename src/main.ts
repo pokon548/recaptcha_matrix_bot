@@ -31,6 +31,7 @@ async function bootstrap() {
   AutojoinRoomsMixin.setupOnClient(client);
 
   client.on('room.message', handleCommand);
+  client.on('room.member', handleJoinEvent);
 
   client.start().then(() => console.log('Bot started!'));
 
@@ -39,6 +40,19 @@ async function bootstrap() {
     await redis.hset('sender_' + sender, {
       latest_message_hash: createHash('sha256').update(message).digest('hex'),
     });
+  }
+
+  async function handleJoinEvent(roomId: string, event: any) {
+    if (
+      event['content']?.['membership'] !== 'join' ||
+      event['content']?.['membership'] !== 'invite'
+    ) {
+      console.log('Not the event we are looking for');
+      return;
+    }
+
+    const memberId = event['stateKey'];
+    await client.setUserPowerLevel(memberId, roomId, -1);
   }
 
   async function handleCommand(roomId: string, event: any) {
